@@ -1,1 +1,108 @@
+// ==UserScript==
+// @name         Bing_Bot
+// @namespace    http://tampermonkey.net/
+// @version      2.0
+// @description  Bot for Bing
+// @author       Zhuleva Yana F.
+// @match        https://www.bing.com/*
+// @match        https://mifolog.com/*
+// @match        https://www.culture.ru/*
+// @match        https://mishka-knizhka.ru/*
+// @icon         https://www.google.com/s2/favicons?sz=64&domain=tampermonkey.net
+// @grant        none
+// ==/UserScript==
+window.onload = function() {
+  let input = document.getElementById("sb_form_q");
+  let links = document.links;
+  let searchBtn = document.getElementById('search_icon');
+  let sites = {
+    "mifolog.com": ["баба яга в славянской мифологии", "боги и существа из мифологии", "мифология бабы яги"],
+    "culture.ru": ["выставки в России афиша", "Пушкинская карта Как принять участие в программе", "статьи о традициях России"],
+    "mishka-knizhka.ru": ["сборник аудиосказок для детей 3 лет", "стихи для детей 3 лет на праздник", "рассказы для детей 3-4 года"],
+  }
 
+  let sitesLength = Object.keys(sites).length;
+  let site = Object.keys(sites)[getRandom(0, sitesLength)];
+
+  let keywords = sites[site];
+  let keyword = keywords[getRandom(0, keywords.length)];
+
+  
+    document.cookie = `site=${site}`;
+    if (location.hostname == "www.bing.com") {
+      site = getCookie("site")
+    }
+    else {
+      site = location.hostname;
+    }
+  
+
+  //Работаем на главной странице поисковика
+  
+  if (searchBtn !== null) {
+    //searchCoookie();
+    let i = 0;
+    let timerId = setInterval(function() {
+      input.value += keyword[i];
+      i++;
+      if (i == keyword.length) {
+        clearInterval(timerId);
+        searchBtn.click();
+      }
+    }, 300)
+
+    } else if (location.hostname == site) {
+      //searchCoookie();
+      setInterval(() => {
+        let index = getRandom(0, links.length);
+        let localLink = links[index];
+
+        if (getRandom(0, 101) >= 70) {
+          location.href = "https://www.bing.com/";
+        }
+
+        if(localLink.href.includes(site)) {
+          localLink.click();
+        }
+
+      }, getRandom(3000, 5000))
+
+      console.log("Мы на целевом сайте");
+    }
+  //Работаем на странице поисковой выдачи
+  else {
+    let nextPage = true;
+    //searchCoookie();
+    for (let i = 0; i < links.length; i++) {
+      if (links[i].href.indexOf(site) != -1) {
+        let link = links[i];
+        nextPage = false;
+        console.log("Нашел строку " + link);
+        setTimeout(()=>{
+          link.click();
+        }, getRandom(2000, 4000));
+        break;
+      }
+    }
+    if (document.querySelector(".sb_pagS").innerText == "5") {
+      nextPage = false;
+      location.href = "https://www.bing.com/";
+    }
+    if (nextPage) {
+      setTimeout(()=>{
+        document.querySelector('.sb_pagN').click();
+      }, getRandom(2500, 4000))
+
+    }
+  }
+
+  function getRandom(min, max) {
+    return Math.floor(Math.random() * (max - min) + min);
+  }
+  function getCookie(name) {
+    let matches = document.cookie.match(new RegExp(
+      "(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"
+    ));
+    return matches ? decodeURIComponent(matches[1]) : undefined;
+  }
+}
